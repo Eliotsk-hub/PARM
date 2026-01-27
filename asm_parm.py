@@ -1,37 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Assembleur Thumb 16-bit -> format Logisim "v2.0 raw"
-
-✅ Fait pour la partie "Assembleur (Logiciel)":
-- Parser un fichier .s (UAL simplifié)
-- Ignorer espaces/tab, commentaires '@', directives '.', push/pop, et "add r7, sp, ..."
-- Gérer les labels (2 passes)
-- Encoder un sous-ensemble Thumb16 (suffisant pour les .s classiques type Cortex-M0)
-- Générer un fichier texte lisible par Logisim
-
-Exemples d'instructions supportées (Thumb16):
-- movs Rd, #imm8
-- adds Rd, #imm8
-- subs Rd, #imm8
-- adds Rd, Rn, Rm
-- subs Rd, Rn, Rm
-- cmp  Rn, #imm8
-- cmp  Rn, Rm
-- ldr  Rt, [sp, #imm]      (imm multiple de 4)
-- str  Rt, [sp, #imm]      (imm multiple de 4)
-- ldr  Rt, [Rn, #imm]      (word, imm multiple de 4, imm <= 124)
-- str  Rt, [Rn, #imm]      (word, imm multiple de 4, imm <= 124)
-- ldrb Rt, [Rn, #imm]      (imm <= 31)
-- strb Rt, [Rn, #imm]      (imm <= 31)
-- add  sp, #imm            (imm multiple de 4)
-- sub  sp, #imm            (imm multiple de 4)
-- add  Rd, sp, #imm        (imm multiple de 4)
-- b label
-- b<cond> label  (beq, bne, bcs, bcc, bmi, bpl, bvs, bvc, bhi, bls, bge, blt, bgt, ble)
-- bx Rm
-- nop
-
 Usage:
   python asm_thumb16.py input.s -o out.hex
 
