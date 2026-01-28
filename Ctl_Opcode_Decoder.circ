@@ -98,25 +98,7 @@ end type_architecture;
 </a>
     </tool>
   </lib>
-  <lib desc="#TCL" name="7">
-    <tool name="TclGeneric">
-      <a name="content">library ieee;
-use ieee.std_logic_1164.all;
-
-entity TCL_Generic is
-  port(
-    --Insert input ports below
-    horloge_i  : in  std_logic;                    -- input bit example
-    val_i      : in  std_logic_vector(3 downto 0); -- input vector example
-
-	  --Insert output ports below
-    max_o      : out std_logic;                    -- output bit example
-    cpt_o      : out std_logic_Vector(3 downto 0)  -- output vector example
-  );
-end TCL_Generic;
-</a>
-    </tool>
-  </lib>
+  <lib desc="#TCL" name="7"/>
   <lib desc="#Base" name="8">
     <tool name="Text Tool">
       <a name="font" val="SansSerif plain 12"/>
@@ -154,6 +136,13 @@ end TCL_Generic;
     <a name="appearance" val="logisim_evolution"/>
     <a name="circuit" val="Opcode_Decoder"/>
     <a name="simulationFrequency" val="1.0"/>
+<<<<<<< HEAD
+=======
+    <comp lib="0" loc="(100,520)" name="Constant">
+      <a name="value" val="0x10"/>
+      <a name="width" val="6"/>
+    </comp>
+>>>>>>> 04dbab25d539094bda87ac91d670af8f52e69dc4
     <comp lib="0" loc="(130,120)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="south"/>
@@ -256,6 +245,7 @@ end TCL_Generic;
       <a name="label" val="Conditional"/>
       <a name="type" val="output"/>
     </comp>
+<<<<<<< HEAD
     <comp lib="0" loc="(380,670)" name="Tunnel">
       <a name="facing" val="east"/>
       <a name="label" val="b1"/>
@@ -277,12 +267,24 @@ end TCL_Generic;
     <comp lib="0" loc="(460,160)" name="Tunnel">
       <a name="label" val="b4"/>
     </comp>
+=======
+    <comp lib="0" loc="(460,100)" name="Tunnel">
+      <a name="label" val="b2"/>
+    </comp>
+    <comp lib="0" loc="(460,130)" name="Tunnel">
+      <a name="label" val="b3"/>
+    </comp>
+    <comp lib="0" loc="(460,160)" name="Tunnel">
+      <a name="label" val="b4"/>
+    </comp>
+>>>>>>> 04dbab25d539094bda87ac91d670af8f52e69dc4
     <comp lib="0" loc="(460,190)" name="Tunnel">
       <a name="label" val="b5"/>
     </comp>
     <comp lib="0" loc="(460,40)" name="Tunnel">
       <a name="label" val="b0"/>
     </comp>
+<<<<<<< HEAD
     <comp lib="0" loc="(460,460)" name="Tunnel">
       <a name="facing" val="east"/>
       <a name="label" val="b0"/>
@@ -301,6 +303,26 @@ end TCL_Generic;
       <a name="facing" val="west"/>
       <a name="label" val="Data_Processing"/>
       <a name="type" val="output"/>
+=======
+    <comp lib="0" loc="(460,70)" name="Tunnel">
+      <a name="label" val="b1"/>
+    </comp>
+    <comp lib="0" loc="(60,660)" name="Tunnel">
+      <a name="facing" val="east"/>
+      <a name="label" val="b5"/>
+    </comp>
+    <comp lib="0" loc="(60,690)" name="Tunnel">
+      <a name="facing" val="east"/>
+      <a name="label" val="b4"/>
+>>>>>>> 04dbab25d539094bda87ac91d670af8f52e69dc4
+    </comp>
+    <comp lib="0" loc="(60,730)" name="Tunnel">
+      <a name="facing" val="east"/>
+      <a name="label" val="b3"/>
+    </comp>
+    <comp lib="0" loc="(60,760)" name="Tunnel">
+      <a name="facing" val="east"/>
+      <a name="label" val="b2"/>
     </comp>
     <comp lib="0" loc="(80,410)" name="Tunnel">
       <a name="facing" val="east"/>
@@ -319,6 +341,10 @@ end TCL_Generic;
     <comp lib="1" loc="(180,820)" name="NOT Gate">
       <a name="size" val="20"/>
     </comp>
+    <comp lib="1" loc="(190,700)" name="AND Gate">
+      <a name="inputs" val="4"/>
+      <a name="size" val="30"/>
+    </comp>
     <comp lib="1" loc="(210,580)" name="NOT Gate">
       <a name="size" val="20"/>
     </comp>
@@ -336,7 +362,11 @@ end TCL_Generic;
       <a name="inputs" val="4"/>
       <a name="size" val="30"/>
     </comp>
+<<<<<<< HEAD
     <comp lib="1" loc="(380,720)" name="NOT Gate">
+=======
+    <comp lib="1" loc="(90,690)" name="NOT Gate">
+>>>>>>> 04dbab25d539094bda87ac91d670af8f52e69dc4
       <a name="size" val="20"/>
     </comp>
     <comp lib="1" loc="(410,510)" name="NOT Gate">
@@ -371,12 +401,21 @@ end TCL_Generic;
     <comp lib="8" loc="(605,805)" name="Text">
       <a name="text" val="Conditional branch"/>
     </comp>
+<<<<<<< HEAD
     <comp lib="8" loc="(725,705)" name="Text">
       <a name="text" val="SP Address"/>
     </comp>
     <comp lib="8" loc="(885,505)" name="Text">
       <a name="text" val="Data Processing"/>
     </comp>
+=======
+    <comp lib="8" loc="(615,515)" name="Text">
+      <a name="text" val="Data Processing"/>
+    </comp>
+    <wire from="(100,520)" to="(230,520)"/>
+    <wire from="(120,660)" to="(120,680)"/>
+    <wire from="(120,680)" to="(160,680)"/>
+>>>>>>> 04dbab25d539094bda87ac91d670af8f52e69dc4
     <wire from="(130,120)" to="(130,170)"/>
     <wire from="(150,420)" to="(240,420)"/>
     <wire from="(150,440)" to="(240,440)"/>
@@ -429,6 +468,7 @@ end TCL_Generic;
     <wire from="(360,90)" to="(380,90)"/>
     <wire from="(370,140)" to="(370,190)"/>
     <wire from="(370,190)" to="(460,190)"/>
+<<<<<<< HEAD
     <wire from="(370,480)" to="(370,490)"/>
     <wire from="(370,490)" to="(430,490)"/>
     <wire from="(380,40)" to="(380,90)"/>
@@ -469,7 +509,29 @@ end TCL_Generic;
     <wire from="(540,500)" to="(640,500)"/>
     <wire from="(80,410)" to="(90,410)"/>
     <wire from="(80,440)" to="(130,440)"/>
+=======
+    <wire from="(370,40)" to="(370,90)"/>
+    <wire from="(370,40)" to="(460,40)"/>
+    <wire from="(380,130)" to="(380,160)"/>
+    <wire from="(380,160)" to="(460,160)"/>
+    <wire from="(380,70)" to="(380,100)"/>
+    <wire from="(380,70)" to="(460,70)"/>
+    <wire from="(390,100)" to="(390,110)"/>
+    <wire from="(390,100)" to="(460,100)"/>
+    <wire from="(390,120)" to="(390,130)"/>
+    <wire from="(390,130)" to="(460,130)"/>
+    <wire from="(60,660)" to="(120,660)"/>
+    <wire from="(60,690)" to="(70,690)"/>
+    <wire from="(60,710)" to="(160,710)"/>
+    <wire from="(60,710)" to="(60,730)"/>
+    <wire from="(60,760)" to="(80,760)"/>
+    <wire from="(80,410)" to="(90,410)"/>
+    <wire from="(80,440)" to="(130,440)"/>
+    <wire from="(80,720)" to="(160,720)"/>
+    <wire from="(80,720)" to="(80,760)"/>
+>>>>>>> 04dbab25d539094bda87ac91d670af8f52e69dc4
     <wire from="(90,410)" to="(90,420)"/>
     <wire from="(90,420)" to="(130,420)"/>
+    <wire from="(90,690)" to="(160,690)"/>
   </circuit>
 </project>
