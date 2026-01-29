@@ -26,7 +26,6 @@ class AsmError(Exception):
             message = f"{message}\n    >> {line}"
         super().__init__(message)
 
-
 # ----------------------------
 # Parsing helpers
 # ----------------------------
@@ -46,7 +45,7 @@ COND_CODES = {
     "hi": 0x8, "ls": 0x9,
     "ge": 0xA, "lt": 0xB,
     "gt": 0xC, "le": 0xD,
-    "al": 0xE,
+    "al": 0xE,   # utilisé par votre doc (BAL)
 }
 
 def parse_reg(tok: str) -> int:
@@ -66,7 +65,6 @@ def parse_imm(tok: str) -> int:
     if not t.startswith("#"):
         raise ValueError(f"Immédiat invalide: {tok}")
     t = t[1:].strip()
-    # autoriser #0x.. ou #-3
     if t.startswith("-0x"):
         return -int(t[3:], 16)
     if t.startswith("0x"):
@@ -74,9 +72,7 @@ def parse_imm(tok: str) -> int:
     return int(t, 10)
 
 def split_operands(s: str) -> List[str]:
-    """
-    Split par virgules, mais sans casser l'intérieur des crochets [ ... ].
-    """
+    """Split par virgules, sans casser l'intérieur des crochets [ ... ]."""
     ops = []
     cur = []
     depth = 0
@@ -98,10 +94,7 @@ def split_operands(s: str) -> List[str]:
     return ops
 
 def parse_mem(op: str) -> Tuple[int, int]:
-    """
-    Parse: [Rn] ou [Rn, #imm]
-    Retourne (Rn, imm)
-    """
+    """Parse: [Rn] ou [Rn, #imm] -> (Rn, imm)"""
     t = op.strip()
     if not (t.startswith("[") and t.endswith("]")):
         raise ValueError("Opérande mémoire invalide")
@@ -123,7 +116,6 @@ def to_u16(x: int) -> int:
 def fmt_hex16(x: int) -> str:
     return f"{x & 0xFFFF:04x}"
 
-
 # ----------------------------
 # Internal representation
 # ----------------------------
@@ -137,9 +129,8 @@ class Instr:
     ops: List[str]
     pc_index: int  # index d'instruction (chaque instruction = 1 mot 16-bit)
 
-
 # ----------------------------
-# Encoder (Thumb16 subset)
+# Encoder helpers
 # ----------------------------
 
 def check_bits_unsigned(val: int, bits: int, what: str):
@@ -152,78 +143,141 @@ def check_bits_signed(val: int, bits: int, what: str):
     if not (mn <= val <= mx):
         raise AsmError(f"{what} hors bornes (signed {bits} bits): {val}")
 
+def check_reg_low(r: int, what: str):
+    if not (0 <= r <= 7):
+        raise AsmError(f"{what} doit être entre r0 et r7 (Thumb16): r{r}")
+
+# ----------------------------
+# Encoders (Thumb-1 / subset PARM)
+# ----------------------------
+
+# Shift (immediate): 000xx imm5 Rm Rd
+def encode_lsl_imm(rd: int, rm: int, imm5: int) -> int:
+    check_reg_low(rd, "Rd")
+    check_reg_low(rm, "Rm")
+    check_bits_unsigned(imm5, 5, "imm5")
+    return 0x0000 | (imm5 << 6) | (rm << 3) | rd
+
+def encode_lsr_imm(rd: int, rm: int, imm5: int) -> int:
+    check_reg_low(rd, "Rd")
+    check_reg_low(rm, "Rm")
+    check_bits_unsigned(imm5, 5, "imm5")
+    return 0x0800 | (imm5 << 6) | (rm << 3) | rd
+
+def encode_asr_imm(rd: int, rm: int, imm5: int) -> int:
+    check_reg_low(rd, "Rd")
+    check_reg_low(rm, "Rm")
+    check_bits_unsigned(imm5, 5, "imm5")
+    return 0x1000 | (imm5 << 6) | (rm << 3) | rd
+
 def encode_movs_imm(rd: int, imm8: int) -> int:
+    check_reg_low(rd, "Rd")
     check_bits_unsigned(imm8, 8, "imm8")
     return 0x2000 | (rd << 8) | imm8
 
-def encode_adds_imm(rd: int, imm8: int) -> int:
+def encode_cmp_imm(rn: int, imm8: int) -> int:
+    check_reg_low(rn, "Rn")
     check_bits_unsigned(imm8, 8, "imm8")
-    return 0x3000 | (rd << 8) | imm8
+    return 0x2800 | (rn << 8) | imm8
 
-def encode_subs_imm(rd: int, imm8: int) -> int:
+def encode_adds_imm8(rdn: int, imm8: int) -> int:
+    check_reg_low(rdn, "Rdn")
     check_bits_unsigned(imm8, 8, "imm8")
-    return 0x3800 | (rd << 8) | imm8
+    return 0x3000 | (rdn << 8) | imm8
+
+def encode_subs_imm8(rdn: int, imm8: int) -> int:
+    check_reg_low(rdn, "Rdn")
+    check_bits_unsigned(imm8, 8, "imm8")
+    return 0x3800 | (rdn << 8) | imm8
 
 def encode_adds_reg(rd: int, rn: int, rm: int) -> int:
     # 0001100 Rm Rn Rd
+    check_reg_low(rd, "Rd")
+    check_reg_low(rn, "Rn")
+    check_reg_low(rm, "Rm")
     return 0x1800 | (rm << 6) | (rn << 3) | rd
 
 def encode_subs_reg(rd: int, rn: int, rm: int) -> int:
     # 0001101 Rm Rn Rd
+    check_reg_low(rd, "Rd")
+    check_reg_low(rn, "Rn")
+    check_reg_low(rm, "Rm")
     return 0x1A00 | (rm << 6) | (rn << 3) | rd
 
-def encode_cmp_imm(rn: int, imm8: int) -> int:
-    check_bits_unsigned(imm8, 8, "imm8")
-    return 0x2800 | (rn << 8) | imm8
+def encode_adds_imm3(rd: int, rn: int, imm3: int) -> int:
+    # 0001110 imm3 Rn Rd
+    check_reg_low(rd, "Rd")
+    check_reg_low(rn, "Rn")
+    check_bits_unsigned(imm3, 3, "imm3")
+    return 0x1C00 | (imm3 << 6) | (rn << 3) | rd
 
-def encode_cmp_reg(rn: int, rm: int) -> int:
-    # 010000 1010 Rm Rn
-    return 0x4280 | (rm << 3) | rn
+def encode_subs_imm3(rd: int, rn: int, imm3: int) -> int:
+    # 0001111 imm3 Rn Rd
+    check_reg_low(rd, "Rd")
+    check_reg_low(rn, "Rn")
+    check_bits_unsigned(imm3, 3, "imm3")
+    return 0x1E00 | (imm3 << 6) | (rn << 3) | rd
 
+# Data Processing: 010000 opcode Rm Rdn
+def encode_dp(opcode: int, rdn: int, rm: int) -> int:
+    check_bits_unsigned(opcode, 4, "opcode")
+    check_reg_low(rdn, "Rdn")
+    check_reg_low(rm, "Rm")
+    return 0x4000 | (opcode << 6) | (rm << 3) | rdn
+
+# Load/Store SP-relative (word)
 def encode_str_sp(rt: int, imm: int) -> int:
-    # STR (SP-relative): 1001 0 Rt imm8, imm = imm8*4
     if imm % 4 != 0:
         raise AsmError("Offset STR [sp, #imm] doit être multiple de 4")
+    rt = int(rt)
+    check_reg_low(rt, "Rt")
     imm8 = imm // 4
     check_bits_unsigned(imm8, 8, "imm8")
     return 0x9000 | (rt << 8) | imm8
 
 def encode_ldr_sp(rt: int, imm: int) -> int:
-    # LDR (SP-relative): 1001 1 Rt imm8, imm = imm8*4
     if imm % 4 != 0:
         raise AsmError("Offset LDR [sp, #imm] doit être multiple de 4")
+    rt = int(rt)
+    check_reg_low(rt, "Rt")
     imm8 = imm // 4
     check_bits_unsigned(imm8, 8, "imm8")
     return 0x9800 | (rt << 8) | imm8
 
+# Load/Store base register (word) : 0110 x imm5 Rn Rt
 def encode_str_imm_word(rt: int, rn: int, imm: int) -> int:
-    # STR (imm, word): 0110 0 imm5 Rn Rt, imm = imm5*4, imm5 <= 31
     if imm % 4 != 0:
         raise AsmError("Offset STR [Rn, #imm] (word) doit être multiple de 4")
+    check_reg_low(rt, "Rt")
+    check_reg_low(rn, "Rn")
     imm5 = imm // 4
     check_bits_unsigned(imm5, 5, "imm5")
     return 0x6000 | (imm5 << 6) | (rn << 3) | rt
 
 def encode_ldr_imm_word(rt: int, rn: int, imm: int) -> int:
-    # LDR (imm, word): 0110 1 imm5 Rn Rt
     if imm % 4 != 0:
         raise AsmError("Offset LDR [Rn, #imm] (word) doit être multiple de 4")
+    check_reg_low(rt, "Rt")
+    check_reg_low(rn, "Rn")
     imm5 = imm // 4
     check_bits_unsigned(imm5, 5, "imm5")
     return 0x6800 | (imm5 << 6) | (rn << 3) | rt
 
+# Byte variants
 def encode_strb_imm(rt: int, rn: int, imm: int) -> int:
-    # STRB: 0111 0 imm5 Rn Rt
+    check_reg_low(rt, "Rt")
+    check_reg_low(rn, "Rn")
     check_bits_unsigned(imm, 5, "imm5")
     return 0x7000 | (imm << 6) | (rn << 3) | rt
 
 def encode_ldrb_imm(rt: int, rn: int, imm: int) -> int:
-    # LDRB: 0111 1 imm5 Rn Rt
+    check_reg_low(rt, "Rt")
+    check_reg_low(rn, "Rn")
     check_bits_unsigned(imm, 5, "imm5")
     return 0x7800 | (imm << 6) | (rn << 3) | rt
 
+# SP adjust
 def encode_add_sp_imm(imm: int) -> int:
-    # ADD SP, #imm : 10110000 0 imm7   imm = imm7*4
     if imm % 4 != 0:
         raise AsmError("ADD sp, #imm : imm doit être multiple de 4")
     imm7 = imm // 4
@@ -231,7 +285,6 @@ def encode_add_sp_imm(imm: int) -> int:
     return 0xB000 | imm7
 
 def encode_sub_sp_imm(imm: int) -> int:
-    # SUB SP, #imm : 10110000 1 imm7
     if imm % 4 != 0:
         raise AsmError("SUB sp, #imm : imm doit être multiple de 4")
     imm7 = imm // 4
@@ -239,36 +292,30 @@ def encode_sub_sp_imm(imm: int) -> int:
     return 0xB080 | imm7
 
 def encode_add_rd_sp_imm(rd: int, imm: int) -> int:
-    # ADD Rd, SP, #imm : 1010 Rd imm8   imm = imm8*4
     if imm % 4 != 0:
         raise AsmError("ADD Rd, sp, #imm : imm doit être multiple de 4")
+    check_reg_low(rd, "Rd")
     imm8 = imm // 4
     check_bits_unsigned(imm8, 8, "imm8")
     return 0xA000 | (rd << 8) | imm8
 
+# Branches
 def encode_b_uncond(cur_pc_index: int, target_pc_index: int) -> int:
-    # B: 11100 imm11 (signed), offset = target - (pc+2 instr) in halfwords
-    # PC effectif = adresse_instr + 4 bytes = +2 instructions (car Thumb16)
-    # en indices d'instruction: pc_effectif_index = cur + 2
-    rel = target_pc_index - (cur_pc_index + 2)  # en instructions (halfwords)
+    rel = target_pc_index - (cur_pc_index + 2)
     check_bits_signed(rel, 11, "offset (B)")
-    imm11 = rel & 0x7FF
-    return 0xE000 | imm11
+    return 0xE000 | (rel & 0x7FF)
 
 def encode_b_cond(cond: int, cur_pc_index: int, target_pc_index: int) -> int:
-    # B<cond>: 1101 cond imm8 (signed)
-    rel = target_pc_index - (cur_pc_index + 2)  # en instructions
+    rel = target_pc_index - (cur_pc_index + 2)
     check_bits_signed(rel, 8, "offset (B<cond>)")
-    imm8 = rel & 0xFF
-    return 0xD000 | (cond << 8) | imm8
+    return 0xD000 | (cond << 8) | (rel & 0xFF)
 
 def encode_bx(rm: int) -> int:
-    # BX Rm: 010001 11 0 Rm(4bits) 000
+    # BX Rm: 010001 11 0 Rm 000
     return 0x4700 | (rm << 3)
 
 def encode_nop() -> int:
     return 0xBF00
-
 
 # ----------------------------
 # Assembler core
@@ -277,12 +324,10 @@ def encode_nop() -> int:
 def preprocess_lines(src: str) -> List[Tuple[int, str]]:
     out = []
     for i, raw in enumerate(src.splitlines(), start=1):
-        # remove comments '@'
         line = raw.split("@", 1)[0].rstrip()
         line = line.strip()
         if not line:
             continue
-        # ignore directives
         if line.startswith("."):
             continue
         out.append((i, line))
@@ -294,25 +339,22 @@ def parse_instructions(lines: List[Tuple[int, str]]) -> List[Instr]:
     for line_no, line in lines:
         original = line
 
-        # label?
         label = None
         if ":" in line:
             before, after = line.split(":", 1)
             if before.strip():
                 label = before.strip()
                 line = after.strip()
-                # label-only line
                 if not line:
                     instrs.append(Instr(line_no, original, label, None, [], pc))
                     continue
 
-        # tokenize mnemonic + operands
         parts = line.split(None, 1)
         mnemonic = parts[0].lower()
         ops_str = parts[1].strip() if len(parts) == 2 else ""
         ops = split_operands(ops_str) if ops_str else []
 
-        # ignore push/pop lines (as demandé)
+        # ignore push/pop (prologue/épilogue C)
         if mnemonic in ("push", "pop"):
             instrs.append(Instr(line_no, original, label, None, [], pc))
             continue
@@ -340,6 +382,22 @@ def build_symbol_table(instrs: List[Instr]) -> Dict[str, int]:
             sym[ins.label] = ins.pc_index
     return sym
 
+def _dp_two_or_three_operands(ins: Instr) -> Tuple[int, int]:
+    """
+    Thumb-1 DP = forme 2 opérandes: OP Rdn, Rm
+    Tolérance: forme 3 opérandes OP Rd, Rn, Rm seulement si Rd == Rn
+    """
+    ops = ins.ops
+    if len(ops) == 2:
+        rdn = parse_reg(ops[0]); rm = parse_reg(ops[1])
+        return rdn, rm
+    if len(ops) == 3:
+        rd = parse_reg(ops[0]); rn = parse_reg(ops[1]); rm = parse_reg(ops[2])
+        if rd != rn:
+            raise AsmError("Forme 3 opérandes supportée seulement si Rd == Rn (Thumb16)", ins.line_no, ins.text)
+        return rd, rm
+    raise AsmError("Attend 2 (ou 3 si Rd==Rn) opérandes", ins.line_no, ins.text)
+
 def encode_one(ins: Instr, sym: Dict[str, int]) -> Optional[int]:
     if ins.mnemonic is None:
         return None
@@ -347,68 +405,100 @@ def encode_one(ins: Instr, sym: Dict[str, int]) -> Optional[int]:
     m = ins.mnemonic
     ops = ins.ops
 
+    # Aliases sans 's'
+    ALIAS = {
+        "and": "ands",
+        "eor": "eors",
+        "orr": "orrs",
+        "adc": "adcs",
+        "sbc": "sbcs",
+        "ror": "rors",
+        "bic": "bics",
+        "mvn": "mvns",
+        "mul": "muls",
+        "lsl": "lsls",
+        "lsr": "lsrs",
+        "asr": "asrs",
+    }
+    m = ALIAS.get(m, m)
+
     try:
-        # NOP
+        # NOP / BX
         if m == "nop":
             return encode_nop()
 
-        # BX
         if m == "bx":
             if len(ops) != 1:
                 raise AsmError("bx attend 1 opérande", ins.line_no, ins.text)
             rm = parse_reg(ops[0])
             return encode_bx(rm)
 
-        # Branches: b / beq / bne / ...
-        if m == "b":
-            if len(ops) != 1:
-                raise AsmError("b attend 1 opérande (label)", ins.line_no, ins.text)
-            label = ops[0].strip()
-            if label not in sym:
-                raise AsmError(f"Label inconnu: {label}", ins.line_no, ins.text)
-            return encode_b_uncond(ins.pc_index, sym[label])
+        # ----------------------------
+        # Shift (imm5) ou Shift (reg DP)
+        # ----------------------------
+        if m in ("lsls", "lsrs", "asrs"):
+            if len(ops) == 3:
+                rd = parse_reg(ops[0])
+                rm = parse_reg(ops[1])
+                imm = parse_imm(ops[2])
+                if imm < 0:
+                    raise AsmError(f"{m} imm5 ne supporte pas les négatifs", ins.line_no, ins.text)
+                if m == "lsls":
+                    return encode_lsl_imm(rd, rm, imm)
+                if m == "lsrs":
+                    return encode_lsr_imm(rd, rm, imm)
+                return encode_asr_imm(rd, rm, imm)
 
-        if m.startswith("b") and len(m) == 3:  # beq, bne, ...
-            cond = m[1:]
-            if cond not in COND_CODES:
-                raise AsmError(f"Condition inconnue: {m}", ins.line_no, ins.text)
-            if len(ops) != 1:
-                raise AsmError(f"{m} attend 1 opérande (label)", ins.line_no, ins.text)
-            label = ops[0].strip()
-            if label not in sym:
-                raise AsmError(f"Label inconnu: {label}", ins.line_no, ins.text)
-            return encode_b_cond(COND_CODES[cond], ins.pc_index, sym[label])
+            if len(ops) == 2:
+                rdn, rm = _dp_two_or_three_operands(ins)  # ici ça gère 2 ops
+                opcode = {"lsls": 0x2, "lsrs": 0x3, "asrs": 0x4}[m]
+                return encode_dp(opcode, rdn, rm)
 
-        # MOVS imm
+            raise AsmError(f"{m} attend 2 (reg) ou 3 (imm5) opérandes", ins.line_no, ins.text)
+
+        # ----------------------------
+        # MOVS imm8
+        # ----------------------------
         if m == "movs":
             if len(ops) != 2:
                 raise AsmError("movs attend 2 opérandes: Rd, #imm8", ins.line_no, ins.text)
             rd = parse_reg(ops[0])
-            imm = parse_imm(ops[1])
-            if imm < 0:
-                raise AsmError("movs imm8 ne supporte pas les négatifs", ins.line_no, ins.text)
-            return encode_movs_imm(rd, imm)
-
-        # ADDS / SUBS
-        if m in ("adds", "subs"):
-            if len(ops) == 2:
-                # adds Rd, #imm8  / subs Rd, #imm8
-                rd = parse_reg(ops[0])
+            if ops[1].strip().startswith("#"):
                 imm = parse_imm(ops[1])
                 if imm < 0:
-                    raise AsmError(f"{m} imm8 ne supporte pas les négatifs", ins.line_no, ins.text)
-                return encode_adds_imm(rd, imm) if m == "adds" else encode_subs_imm(rd, imm)
+                    raise AsmError("movs imm8 ne supporte pas les négatifs", ins.line_no, ins.text)
+                return encode_movs_imm(rd, imm)
+            raise AsmError("movs supporte uniquement: movs Rd, #imm8", ins.line_no, ins.text)
+
+        # ----------------------------
+        # ADDS / SUBS (imm8 | reg | imm3)
+        # ----------------------------
+        if m in ("adds", "subs"):
+            if len(ops) == 2:
+                rdn = parse_reg(ops[0])
+                imm = parse_imm(ops[1])
+                if imm < 0:
+                    raise AsmError(f"{m} imm ne supporte pas les négatifs", ins.line_no, ins.text)
+                return encode_adds_imm8(rdn, imm) if m == "adds" else encode_subs_imm8(rdn, imm)
 
             if len(ops) == 3:
-                # adds Rd, Rn, Rm / subs Rd, Rn, Rm
                 rd = parse_reg(ops[0])
                 rn = parse_reg(ops[1])
+
+                if ops[2].strip().startswith("#"):
+                    imm3 = parse_imm(ops[2])
+                    if imm3 < 0:
+                        raise AsmError(f"{m} imm3 ne supporte pas les négatifs", ins.line_no, ins.text)
+                    return encode_adds_imm3(rd, rn, imm3) if m == "adds" else encode_subs_imm3(rd, rn, imm3)
+
                 rm = parse_reg(ops[2])
                 return encode_adds_reg(rd, rn, rm) if m == "adds" else encode_subs_reg(rd, rn, rm)
 
             raise AsmError(f"{m} attend 2 ou 3 opérandes", ins.line_no, ins.text)
 
-        # CMP
+        # ----------------------------
+        # CMP (imm8 ou reg)
+        # ----------------------------
         if m == "cmp":
             if len(ops) != 2:
                 raise AsmError("cmp attend 2 opérandes", ins.line_no, ins.text)
@@ -419,49 +509,71 @@ def encode_one(ins: Instr, sym: Dict[str, int]) -> Optional[int]:
                     raise AsmError("cmp imm8 ne supporte pas les négatifs", ins.line_no, ins.text)
                 return encode_cmp_imm(rn, imm)
             rm = parse_reg(ops[1])
-            return encode_cmp_reg(rn, rm)
+            return encode_dp(0xA, rn, rm)  # CMP reg
 
-        # LDR/STR (SP relative / general)
+        # ----------------------------
+        # Data Processing (16 ops)
+        # ----------------------------
+        DP_OPCODES = {
+            "ands": 0x0,
+            "eors": 0x1,
+            "adcs": 0x5,
+            "sbcs": 0x6,
+            "rors": 0x7,
+            "tst":  0x8,
+            "rsbs": 0x9,
+            "cmn":  0xB,
+            "orrs": 0xC,
+            "muls": 0xD,
+            "bics": 0xE,
+            "mvns": 0xF,
+        }
+        if m in DP_OPCODES:
+            if m in ("tst", "rsbs", "cmn"):
+                if len(ops) != 2:
+                    raise AsmError(f"{m} attend 2 opérandes", ins.line_no, ins.text)
+                rdn = parse_reg(ops[0]); rm = parse_reg(ops[1])
+                return encode_dp(DP_OPCODES[m], rdn, rm)
+
+            rdn, rm = _dp_two_or_three_operands(ins)
+            return encode_dp(DP_OPCODES[m], rdn, rm)
+
+        # ----------------------------
+        # LDR/STR (SP relative / base reg / byte)
+        # ----------------------------
         if m in ("ldr", "str", "ldrb", "strb"):
             if len(ops) != 2:
                 raise AsmError(f"{m} attend 2 opérandes", ins.line_no, ins.text)
             rt = parse_reg(ops[0])
             rn, imm = parse_mem(ops[1])
 
-            # SP-relative (word)
             if rn == 13 and m in ("ldr", "str"):
                 if imm < 0:
                     raise AsmError("Offset [sp,#imm] négatif non supporté ici", ins.line_no, ins.text)
                 return encode_ldr_sp(rt, imm) if m == "ldr" else encode_str_sp(rt, imm)
 
-            # General base register
+            if imm < 0:
+                raise AsmError("Offset négatif non supporté", ins.line_no, ins.text)
+
             if m == "ldr":
-                if imm < 0:
-                    raise AsmError("Offset négatif non supporté", ins.line_no, ins.text)
                 return encode_ldr_imm_word(rt, rn, imm)
             if m == "str":
-                if imm < 0:
-                    raise AsmError("Offset négatif non supporté", ins.line_no, ins.text)
                 return encode_str_imm_word(rt, rn, imm)
             if m == "ldrb":
-                if imm < 0:
-                    raise AsmError("Offset négatif non supporté", ins.line_no, ins.text)
                 return encode_ldrb_imm(rt, rn, imm)
             if m == "strb":
-                if imm < 0:
-                    raise AsmError("Offset négatif non supporté", ins.line_no, ins.text)
                 return encode_strb_imm(rt, rn, imm)
 
-        # ADD/SUB (SP)
+        # ----------------------------
+        # ADD/SUB SP (misc)
+        # ----------------------------
         if m == "add":
-            # add sp, #imm
             if len(ops) == 2 and ops[0].strip().lower() == "sp" and ops[1].strip().startswith("#"):
                 imm = parse_imm(ops[1])
                 if imm < 0:
                     raise AsmError("add sp,#imm négatif -> utiliser sub", ins.line_no, ins.text)
                 return encode_add_sp_imm(imm)
 
-            # add Rd, sp, #imm
             if len(ops) == 3 and ops[1].strip().lower() == "sp" and ops[2].strip().startswith("#"):
                 rd = parse_reg(ops[0])
                 imm = parse_imm(ops[2])
@@ -472,7 +584,6 @@ def encode_one(ins: Instr, sym: Dict[str, int]) -> Optional[int]:
             raise AsmError("add supporté uniquement: add sp,#imm ou add Rd,sp,#imm", ins.line_no, ins.text)
 
         if m == "sub":
-            # sub sp, #imm
             if len(ops) == 2 and ops[0].strip().lower() == "sp" and ops[1].strip().startswith("#"):
                 imm = parse_imm(ops[1])
                 if imm < 0:
@@ -480,13 +591,31 @@ def encode_one(ins: Instr, sym: Dict[str, int]) -> Optional[int]:
                 return encode_sub_sp_imm(imm)
             raise AsmError("sub supporté uniquement: sub sp,#imm", ins.line_no, ins.text)
 
+        # ----------------------------
+        # Branches (après DP pour éviter conflit avec BIC)
+        # ----------------------------
+        if m == "b":
+            if len(ops) != 1:
+                raise AsmError("b attend 1 opérande (label)", ins.line_no, ins.text)
+            label = ops[0].strip()
+            if label not in sym:
+                raise AsmError(f"Label inconnu: {label}", ins.line_no, ins.text)
+            return encode_b_uncond(ins.pc_index, sym[label])
+
+        if m.startswith("b") and len(m) == 3 and (m[1:] in COND_CODES):
+            if len(ops) != 1:
+                raise AsmError(f"{m} attend 1 opérande (label)", ins.line_no, ins.text)
+            label = ops[0].strip()
+            if label not in sym:
+                raise AsmError(f"Label inconnu: {label}", ins.line_no, ins.text)
+            return encode_b_cond(COND_CODES[m[1:]], ins.pc_index, sym[label])
+
         raise AsmError(f"Instruction non supportée: {m}", ins.line_no, ins.text)
 
     except AsmError:
         raise
     except Exception as e:
         raise AsmError(str(e), ins.line_no, ins.text)
-
 
 def assemble_text(src: str) -> List[int]:
     lines = preprocess_lines(src)
@@ -511,7 +640,6 @@ def write_logisim_hex(words: List[int], path: str, wrap: int = 16):
                     f.write(" ")
             f.write(fmt_hex16(w))
         f.write("\n")
-
 
 # ----------------------------
 # Self-test (exemple du sujet)
@@ -540,7 +668,6 @@ def run_selftest():
     print("SELFTEST OK")
     print("v2.0 raw")
     print(got)
-
 
 # ----------------------------
 # CLI
