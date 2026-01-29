@@ -179,10 +179,6 @@ end type_architecture;
       <a name="facing" val="east"/>
       <a name="label" val="b2"/>
     </comp>
-    <comp lib="0" loc="(230,700)" name="Tunnel">
-      <a name="facing" val="east"/>
-      <a name="label" val="b3"/>
-    </comp>
     <comp lib="0" loc="(260,720)" name="Tunnel">
       <a name="facing" val="east"/>
       <a name="label" val="b4"/>
@@ -190,6 +186,10 @@ end type_architecture;
     <comp lib="0" loc="(290,520)" name="Tunnel">
       <a name="facing" val="east"/>
       <a name="label" val="b4"/>
+    </comp>
+    <comp lib="0" loc="(290,690)" name="Tunnel">
+      <a name="facing" val="east"/>
+      <a name="label" val="b3"/>
     </comp>
     <comp lib="0" loc="(290,740)" name="Tunnel">
       <a name="facing" val="east"/>
@@ -238,9 +238,17 @@ end type_architecture;
       <a name="label" val="Conditional"/>
       <a name="type" val="output"/>
     </comp>
+    <comp lib="0" loc="(380,670)" name="Tunnel">
+      <a name="facing" val="east"/>
+      <a name="label" val="b1"/>
+    </comp>
     <comp lib="0" loc="(410,470)" name="Tunnel">
       <a name="facing" val="east"/>
       <a name="label" val="b1"/>
+    </comp>
+    <comp lib="0" loc="(430,660)" name="Tunnel">
+      <a name="facing" val="east"/>
+      <a name="label" val="b0"/>
     </comp>
     <comp lib="0" loc="(460,100)" name="Tunnel">
       <a name="label" val="b2"/>
@@ -329,7 +337,7 @@ end type_architecture;
       <a name="size" val="20"/>
     </comp>
     <comp lib="1" loc="(510,700)" name="AND Gate">
-      <a name="inputs" val="4"/>
+      <a name="inputs" val="6"/>
       <a name="size" val="30"/>
     </comp>
     <comp lib="1" loc="(540,500)" name="AND Gate">
@@ -377,19 +385,23 @@ end type_architecture;
     <wire from="(220,580)" to="(250,580)"/>
     <wire from="(220,620)" to="(220,650)"/>
     <wire from="(220,620)" to="(250,620)"/>
-    <wire from="(230,700)" to="(460,700)"/>
     <wire from="(260,720)" to="(360,720)"/>
     <wire from="(270,430)" to="(370,430)"/>
     <wire from="(280,600)" to="(370,600)"/>
     <wire from="(280,800)" to="(370,800)"/>
     <wire from="(290,520)" to="(510,520)"/>
+    <wire from="(290,690)" to="(300,690)"/>
     <wire from="(290,740)" to="(460,740)"/>
+    <wire from="(300,690)" to="(300,710)"/>
+    <wire from="(300,710)" to="(480,710)"/>
     <wire from="(320,150)" to="(340,150)"/>
     <wire from="(320,490)" to="(330,490)"/>
     <wire from="(320,540)" to="(390,540)"/>
     <wire from="(330,490)" to="(330,510)"/>
     <wire from="(330,510)" to="(390,510)"/>
-    <wire from="(330,680)" to="(480,680)"/>
+    <wire from="(330,680)" to="(340,680)"/>
+    <wire from="(340,680)" to="(340,690)"/>
+    <wire from="(340,690)" to="(480,690)"/>
     <wire from="(360,100)" to="(390,100)"/>
     <wire from="(360,110)" to="(400,110)"/>
     <wire from="(360,120)" to="(450,120)"/>
@@ -403,7 +415,10 @@ end type_architecture;
     <wire from="(370,490)" to="(430,490)"/>
     <wire from="(380,40)" to="(380,90)"/>
     <wire from="(380,40)" to="(460,40)"/>
-    <wire from="(380,720)" to="(430,720)"/>
+    <wire from="(380,670)" to="(390,670)"/>
+    <wire from="(380,720)" to="(480,720)"/>
+    <wire from="(390,670)" to="(390,680)"/>
+    <wire from="(390,680)" to="(480,680)"/>
     <wire from="(390,70)" to="(390,100)"/>
     <wire from="(390,70)" to="(460,70)"/>
     <wire from="(400,100)" to="(400,110)"/>
@@ -413,8 +428,7 @@ end type_architecture;
     <wire from="(410,540)" to="(490,540)"/>
     <wire from="(420,470)" to="(420,480)"/>
     <wire from="(420,480)" to="(450,480)"/>
-    <wire from="(430,710)" to="(430,720)"/>
-    <wire from="(430,710)" to="(480,710)"/>
+    <wire from="(430,660)" to="(470,660)"/>
     <wire from="(440,130)" to="(440,140)"/>
     <wire from="(440,140)" to="(450,140)"/>
     <wire from="(450,120)" to="(450,130)"/>
@@ -423,11 +437,11 @@ end type_architecture;
     <wire from="(450,160)" to="(460,160)"/>
     <wire from="(450,490)" to="(510,490)"/>
     <wire from="(460,460)" to="(470,460)"/>
-    <wire from="(460,690)" to="(460,700)"/>
-    <wire from="(460,690)" to="(480,690)"/>
-    <wire from="(460,720)" to="(460,740)"/>
-    <wire from="(460,720)" to="(480,720)"/>
+    <wire from="(460,730)" to="(460,740)"/>
+    <wire from="(460,730)" to="(480,730)"/>
     <wire from="(470,480)" to="(510,480)"/>
+    <wire from="(470,660)" to="(470,670)"/>
+    <wire from="(470,670)" to="(480,670)"/>
     <wire from="(490,460)" to="(500,460)"/>
     <wire from="(490,530)" to="(490,540)"/>
     <wire from="(490,530)" to="(510,530)"/>
