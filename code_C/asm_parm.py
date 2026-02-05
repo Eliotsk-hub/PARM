@@ -328,7 +328,7 @@ def preprocess_lines(src: str) -> List[Tuple[int, str]]:
         line = line.strip()
         if not line:
             continue
-        if line.startswith("."):
+        if line.startswith(".") and ":" not in line:
             continue
         out.append((i, line))
     return out
