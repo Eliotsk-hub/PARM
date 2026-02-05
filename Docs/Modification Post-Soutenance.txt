@@ -1,0 +1,1 @@
+ALU : ajustement du traitement de CMP en dissociant la sortie S et le calcul des flags : la sortie peut être forcée (ex. S=0) tandis que NZCV est calculé à partir du résultat interne de la soustraction (avant forçage), afin d’obtenir des flags corrects sans effet de bord sur les registres.
